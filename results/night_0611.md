@@ -157,3 +157,21 @@ re-runs — the plain "predict next move from the book(s)" formulation is exhaus
 FGBL leads the complex (net +0.055 @1s), FBTP second (+0.037), all best lags = 1 step.
 Most-led: FGBX/FGBS/FOAT → FGBX queued as multi-source target. FBTP→FOAT stronger than
 FGBL→FOAT at 100ms (periphery internal pecking order).
+
+## CORRECTION (post-review with Leo, 2026-06-12 early AM)
+
+The conclusions above over-weighted backtests with ~30 trades. Re-evaluated per the
+robust protocol: per-tick ML metrics first (analysis/ml_metrics.py →
+results/ml_metrics_night_0611.csv), then backtests only at τ with >30 trades.
+
+1. **Leo's seed bet confirmed**: FOAT seeds 1/2/3 have stable per-tick up-precision
+   0.39–0.47 (≈3× the 15.5% base rate) — the τ0.6 PnL divergence was small-n backtest
+   realization noise, not signal instability. What varies by seed is confidence
+   calibration (190 vs 4 up-signals at τ0.6) and up/down balance.
+2. **Robust backtests (τ0.45/0.50, 59–1,580 trades): ALL configs PF ≤ 1.00.** The night
+   verdict stands but for the right reason: no tradeable edge in this formulation;
+   seed1's +915€/31tr was the lucky draw, not a killed edge.
+3. **Constructive**: real reproducible per-tick signal exists (up-side ~3× base-rate
+   precision; down-side weaker, 1.8–2.5×, unstable). The bleed is in the strategy layer
+   (spread costs + opposite-signal exit), not the model → prioritize trade formulation:
+   spread/pairs, exit logic, tapered labeling.
