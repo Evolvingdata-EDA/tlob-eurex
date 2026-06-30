@@ -7,3 +7,4 @@ outputs/
 wandb/
 *.log
 lightning_logs/
+results/*.parquet
