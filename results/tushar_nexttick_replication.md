@@ -77,22 +77,33 @@ incl. the June window Tushar actually used). One TLOB trained on full L10 depth
 L1 control — compared against the L1/linear numbers above. Caveat: ~40-day window vs the
 252-day L1 run, so this is depth *and* far less data, not a clean depth isolation.)
 
-| TLOB input | Clock | Levels | # feats | Sign accuracy (test) |
-|---|---|---|---|---|
-| TBBO | trade | L1 | 8 | 0.7932 |
-| MBP-10 | tob_priceqty | L10 (full depth) | 44 | **_pending_** |
+| TLOB input | Clock | Levels | # feats | Train rows | Sign accuracy (test) |
+|---|---|---|---|---|---|
+| TBBO | trade | L1 | 8 | 4.0M (252d) | **0.7932** |
+| MBP-10 | tob_priceqty | L10 (full depth) | 44 | 40.1M (~40d) | **0.7472** |
 
-MBP-10 must be sampled on `mbp_clock="tob_priceqty"` (every TOB change, = Tushar's event
-definition) — the trade clock keeps only ~2.5% of book events and is not a valid test.
+MBP-10 is sampled on `mbp_clock="tob_priceqty"` (every TOB change = Tushar's event
+definition; the trade clock keeps only ~2.5% of book events). 40.1M train rows (dense
+clock over ~40 days = ~10× the 252-day TBBO trade-clock set), seq 512, lean float32 build
+(`dataset.lean_float32=True`, added to the framework to fit the ~50M-row build in RAM).
 
-## Takeaways (preliminary)
+**Depth hurts (−4.6 pts) and overfits fast.** Val accuracy peaked at 75.3% after only 10k
+steps (26% of epoch 0), then collapsed as train loss kept falling (val_loss 0.52 → 1.33 by
+epoch 2 → patience-8 early stop). Best-checkpoint test = 0.7472, well below the L1/linear
+~0.79. Caveat: the L10 run uses the dense clock while the L1/linear numbers use the trade
+clock, so this is depth **+** clock, not a pure depth isolation (the matched L1-dense
+control was deferred) — but the overfitting signature is decisive on its own.
 
-1. The next-tick label is **near-mechanical**: imbalance alone ≈ 79% on our data; +39
-   features add +0.02pts.
-2. **TLOB ≈ linear (~79.3%)** at the next-tick horizon — no DNN edge, opposite to the
-   1s-smoothed target. The value of a sequence model appears only as the horizon length
-   grows and the static imbalance signal decays.
-3. Depth (MBP-10, tob_priceqty) result pending.
+## Takeaways
+
+1. The next-tick label is **near-mechanical**: imbalance alone ≈ 79% on our data; the other
+   39 L1 features add +0.02pts.
+2. **TLOB ≈ linear (~79.3%)** at the next-tick horizon — no DNN edge, the opposite of the
+   1s-smoothed target (where TLOB won by +12pts). A sequence model only adds value as the
+   horizon lengthens and the static imbalance signal decays.
+3. **Order-book depth (MBP-10 L10) does not help — it hurts (0.7472 vs 0.7932) and overfits.**
+   Consistent with the earlier mm-target depth finding. Top-of-book L1 is enough (and is the
+   only feed available across all instruments and the full year).
 
 ## Artifacts
 
