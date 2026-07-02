@@ -1,0 +1,500 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TLOB — Eurex bond futures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,500;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#D30800; --ink:#100202; --paper:#FBEFD9;
+  --bg-primary:var(--paper); --text-primary:var(--ink);
+  --text-secondary:rgba(16,2,2,0.60);
+  --accent:var(--red); --accent-dim:rgba(211,8,0,0.10);
+  --border:rgba(16,2,2,0.14); --surface:#ffffff; --on-accent:#ffffff;
+  --font-title:'Crimson Pro',Georgia,'Times New Roman',serif;
+  --font-body:'Manrope',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-primary);color:var(--text-primary);font-weight:600;-webkit-font-smoothing:antialiased}
+.slide{position:relative;height:100vh;height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(2.4rem,6vw,6rem) clamp(2.4rem,7vw,7rem);overflow:hidden}
+.slide--dark{--bg-primary:var(--ink);--text-primary:var(--paper);
+  --text-secondary:rgba(251,239,217,0.66);--border:rgba(251,239,217,0.16);
+  --accent-dim:rgba(211,8,0,0.22);background:var(--ink);color:var(--paper)}
+h1,h2,h3{font-family:var(--font-title);font-weight:500;letter-spacing:-.01em;line-height:1.05}
+.eyebrow{font-family:var(--font-body);font-weight:700;text-transform:uppercase;
+  letter-spacing:.14em;font-size:clamp(.72rem,1.1vw,.86rem);color:var(--accent);margin-bottom:1.1rem}
+.slide h2.title{font-size:clamp(2rem,4.4vw,3.4rem);margin-bottom:.4rem}
+.slide .lede{color:var(--text-secondary);font-size:clamp(1rem,1.7vw,1.3rem);max-width:40ch;margin-top:.6rem}
+p,li{line-height:1.5}
+
+/* ---- progress + nav dots ---- */
+.progress{position:fixed;top:0;left:0;height:4px;background:var(--accent);width:0;z-index:50;transition:width .15s linear}
+.dots{position:fixed;right:clamp(.9rem,1.6vw,1.6rem);top:50%;transform:translateY(-50%);z-index:50;
+  display:flex;flex-direction:column;gap:.62rem}
+.dots button{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--text-secondary);background:transparent;cursor:pointer;padding:0;transition:all .2s}
+.dots button.active{background:var(--accent);border-color:var(--accent);transform:scale(1.25)}
+
+/* ---- cover ---- */
+.cover{justify-content:center;align-items:flex-start}
+.cover .aura{position:absolute;z-index:0;pointer-events:none;width:64vw;height:64vw;left:-10vw;top:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 42%,transparent),
+    color-mix(in srgb,var(--accent) 10%,transparent) 45%,transparent 70%);
+  filter:blur(26px);transform:translateY(-50%);animation:drift 17s ease-in-out infinite}
+@keyframes drift{0%{transform:translateY(-50%) translateX(-2%) scale(1)}50%{transform:translateY(-54%) translateX(4%) scale(1.1)}100%{transform:translateY(-50%) translateX(-2%) scale(1)}}
+.cover .inner{position:relative;z-index:1;max-width:min(92vw,1600px)}
+.cover h1{color:var(--text-primary);font-size:clamp(3.2rem,7.6vw,6.4rem);line-height:1.0;letter-spacing:-.018em}
+.circle-word{position:relative;display:inline-block;font-style:italic;color:var(--text-primary);white-space:nowrap;padding:0 .12em;isolation:isolate}
+.circle-word::before{content:"";position:absolute;inset:-35% -14%;
+  background:radial-gradient(ellipse at center,color-mix(in srgb,var(--accent) 34%,transparent),transparent 65%);
+  filter:blur(24px);z-index:-2;opacity:0;transform:scale(.94);
+  transition:opacity 1.2s cubic-bezier(.16,1,.3,1) 1.4s,transform 1.2s cubic-bezier(.16,1,.3,1) 1.4s;pointer-events:none}
+.cover.visible .circle-word::before{opacity:.78;transform:scale(1);animation:wordGlow 5.4s ease-in-out 2.6s infinite}
+@keyframes wordGlow{0%,100%{opacity:.5;transform:scale(.96)}50%{opacity:.95;transform:scale(1.06)}}
+.circle-mark{position:absolute;left:-7%;top:-22%;width:114%;height:144%;overflow:visible;pointer-events:none;z-index:-1}
+.circle-mark path{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:1100;stroke-dashoffset:1100;transition:stroke-dashoffset 1.5s cubic-bezier(.6,.04,.4,1) 1.1s}
+.cover.visible .circle-mark path{stroke-dashoffset:0}
+.cover .sub{font-size:clamp(1.25rem,2.4vw,2rem);margin-top:clamp(1.6rem,3vh,2.4rem);max-width:44ch;color:var(--text-secondary)}
+.cover.visible h1{transition-delay:.05s}.cover.visible .sub{transition-delay:.22s}
+
+/* ---- agenda ---- */
+.agenda-list{display:flex;flex-direction:column;gap:clamp(.9rem,2vh,1.5rem);margin-top:clamp(1.4rem,3vh,2.4rem);max-width:60ch}
+.agenda-item{display:flex;align-items:flex-start;gap:1.2rem}
+.agenda-num{flex:0 0 auto;width:clamp(2.6rem,3.6vw,3.2rem);height:clamp(2.6rem,3.6vw,3.2rem);border-radius:50%;
+  border:2px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:clamp(1rem,1.6vw,1.3rem)}
+.agenda-item.active .agenda-num{background:var(--accent);color:var(--on-accent);box-shadow:0 12px 30px rgba(211,8,0,.22)}
+.agenda-label{font-family:var(--font-title);font-size:clamp(1.3rem,2.4vw,1.9rem);line-height:1.1}
+.agenda-desc{color:var(--text-secondary);font-size:clamp(.9rem,1.3vw,1.05rem);margin-top:.2rem}
+
+/* ---- two-column ---- */
+.two-col-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4.5rem);align-items:center;margin-top:clamp(1.2rem,3vh,2rem)}
+.bullets{list-style:none;display:flex;flex-direction:column;gap:1rem;max-width:46ch}
+.bullets li{position:relative;padding-left:1.5rem;font-size:clamp(.98rem,1.5vw,1.2rem);color:var(--text-primary)}
+.bullets li::before{content:"";position:absolute;left:0;top:.6em;width:.55rem;height:.55rem;border-radius:50%;background:var(--accent)}
+.bullets li b{color:var(--text-primary)}
+.bullets li span{color:var(--text-secondary);font-weight:500}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:clamp(1.4rem,2.6vw,2.2rem);box-shadow:0 18px 44px rgba(16,2,2,.08)}
+.panel h3{font-size:clamp(1.1rem,1.8vw,1.4rem);margin-bottom:1rem}
+.kv{display:flex;justify-content:space-between;gap:1rem;padding:.62rem 0;border-bottom:1px dashed var(--border);font-size:clamp(.9rem,1.3vw,1.05rem)}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--text-secondary);font-weight:600}
+.kv .v{font-weight:700;text-align:right}
+
+/* ---- tables / comparison ---- */
+table.rt{width:100%;border-collapse:collapse;margin-top:clamp(1.2rem,3vh,2rem);font-size:clamp(.86rem,1.35vw,1.12rem)}
+table.rt th,table.rt td{padding:.72rem .9rem;text-align:right;border-bottom:1px solid var(--border)}
+table.rt th:first-child,table.rt td:first-child{text-align:left}
+table.rt thead th{font-family:var(--font-body);font-weight:700;font-size:.82em;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary);border-bottom:2px solid var(--border)}
+table.rt tbody tr.hi{background:var(--accent-dim)}
+table.rt tbody tr.hi td{font-weight:700}
+table.rt .num{font-variant-numeric:tabular-nums}
+table.rt .pos{color:var(--accent);font-weight:700}
+.caption{color:var(--text-secondary);font-size:clamp(.82rem,1.15vw,1rem);margin-top:1rem;max-width:70ch;font-weight:500}
+.hz-badge{display:inline-flex;align-items:center;gap:.5em;margin:.5rem 0 .2rem;padding:.34em .8em;border-radius:999px;
+  background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:clamp(.72rem,1.05vw,.9rem);
+  letter-spacing:.04em;text-transform:uppercase;width:fit-content}
+.hz-badge.time::before{content:"⏱";font-size:1.05em}
+.hz-badge.tick::before{content:"⇥";font-size:1.05em}
+
+/* ---- stat grid ---- */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1.4rem,3.4vw,3rem);margin-top:clamp(1.6rem,4vh,3rem)}
+.stat-grid.two{grid-template-columns:repeat(2,1fr)}
+.stat .num{font-family:var(--font-title);font-size:clamp(3rem,7vw,6rem);line-height:.95;letter-spacing:-.02em}
+.stat .num.accent{color:var(--accent)}
+.stat .unit{font-size:.42em;color:var(--text-secondary)}
+.stat .slabel{font-weight:700;margin-top:.5rem;font-size:clamp(1rem,1.5vw,1.25rem)}
+.stat .sctx{color:var(--text-secondary);font-size:clamp(.85rem,1.2vw,1rem);margin-top:.25rem;font-weight:500;max-width:26ch}
+
+/* ---- feature grid ---- */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1rem,2vw,1.6rem);margin-top:clamp(1.4rem,3vh,2.2rem)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:clamp(1.1rem,2vw,1.6rem);box-shadow:0 12px 30px rgba(16,2,2,.06)}
+.card .ico{width:40px;height:40px;margin-bottom:.8rem}
+.card .ico svg{width:100%;height:100%}
+.card h3{font-size:clamp(1.05rem,1.6vw,1.3rem);margin-bottom:.4rem}
+.card p{color:var(--text-secondary);font-size:clamp(.85rem,1.2vw,1rem);font-weight:500;line-height:1.45}
+.card .cnum{font-family:var(--font-title);color:var(--accent);font-size:1.1em;font-weight:600}
+
+/* ---- horizon bars ---- */
+.hbars{display:flex;flex-direction:column;gap:clamp(1.6rem,4vh,2.8rem);margin-top:clamp(2rem,5vh,3.4rem);max-width:60rem}
+.hbar-row{display:grid;grid-template-columns:clamp(8rem,16vw,13rem) 1fr;align-items:center;gap:clamp(1rem,2.5vw,2rem)}
+.hbar-label{font-family:var(--font-title);font-size:clamp(1.2rem,2vw,1.7rem)}
+.hbar-label small{display:block;font-family:var(--font-body);font-weight:600;color:var(--text-secondary);font-size:.62em;margin-top:.15rem}
+.hbar-track{position:relative;height:clamp(2.6rem,5vh,3.6rem);background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.hbar-fill{height:100%;border-radius:7px;background:var(--accent);transform-origin:left;transform:scaleX(0);
+  transition:transform 1s cubic-bezier(.6,.04,.4,1) .2s;display:flex;align-items:center;justify-content:flex-end;
+  min-width:2px}
+.slide.visible .hbar-fill{transform:scaleX(1)}
+.hbar-fill.dim{background:rgba(16,2,2,.28)}
+.hbar-val{font-weight:700;font-size:clamp(1rem,1.6vw,1.4rem);white-space:nowrap;padding:0 .7rem;color:var(--text-primary)}
+.hbar-val.inbar{color:var(--on-accent)}
+
+/* ---- closing ---- */
+.closing{justify-content:center;align-items:flex-start}
+.closing h1{font-size:clamp(2.8rem,6.4vw,5.4rem);line-height:1.02;letter-spacing:-.018em;max-width:20ch}
+.closing .circle-word{margin-left:.28em}
+.closing .next{margin-top:clamp(1.6rem,3.5vh,2.6rem);font-size:clamp(1.05rem,1.7vw,1.35rem);color:var(--text-secondary);max-width:52ch;font-weight:600}
+.closing .next b{color:var(--accent)}
+
+/* ---- reveal toolkit ----
+   Initial hidden states are gated behind html.js so that if JS never runs
+   (e.g. some embedded HTML previews), all content stays fully visible. */
+html.js .reveal{opacity:0;transform:translateY(16px);transition:opacity 550ms cubic-bezier(.16,1,.3,1),transform 550ms cubic-bezier(.16,1,.3,1);will-change:opacity,transform}
+html.js .reveal.from-left{transform:translateX(-24px)}
+html.js .reveal.from-right{transform:translateX(24px)}
+html.js .reveal.from-scale{transform:scale(.96)}
+html.js .reveal.from-blur{filter:blur(8px);transition:opacity 700ms cubic-bezier(.16,1,.3,1),filter 700ms cubic-bezier(.16,1,.3,1);transform:none}
+html.js .reveal.fade-only{transform:none;transition:opacity 450ms ease-out}
+.slide.visible .reveal{opacity:1;transform:none;filter:none}
+.stagger>.reveal{transition-delay:0ms}
+.slide.visible .stagger>.reveal:nth-child(1){transition-delay:40ms}
+.slide.visible .stagger>.reveal:nth-child(2){transition-delay:120ms}
+.slide.visible .stagger>.reveal:nth-child(3){transition-delay:200ms}
+.slide.visible .stagger>.reveal:nth-child(4){transition-delay:280ms}
+.slide.visible .stagger>.reveal:nth-child(5){transition-delay:360ms}
+.slide.visible .stagger>.reveal:nth-child(6){transition-delay:440ms}
+.draw-line{display:block;height:2px;background:var(--accent);transform-origin:left center;transform:scaleX(0);transition:transform 800ms cubic-bezier(.6,.04,.4,1) 150ms}
+.slide.visible .draw-line{transform:scaleX(1)}
+.float{animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+/* No-JS / preview fallback: never leave animated elements in their hidden start state */
+html:not(.js) .hbar-fill{transform:scaleX(1)!important}
+html:not(.js) .draw-line{transform:scaleX(1)!important}
+html:not(.js) .circle-mark path{stroke-dashoffset:0!important}
+@media (prefers-reduced-motion:reduce){
+  .reveal,.reveal.from-left,.reveal.from-right,.reveal.from-scale,.reveal.from-blur,.reveal.fade-only,.draw-line,.float,.hbar-fill{
+    transition:none!important;animation:none!important;transform:none!important;opacity:1!important;filter:none!important}
+  .circle-mark path{stroke-dashoffset:0;transition:none}
+  .circle-word::before{opacity:.6;transform:scale(1);animation:none;transition:none}
+  .cover .aura{animation:none}
+}
+@media (max-height:700px){.slide{padding-top:clamp(1.8rem,4vh,3rem);padding-bottom:clamp(1.8rem,4vh,3rem)}}
+@media (max-width:820px){.two-col-grid,.stat-grid,.stat-grid.two,.feat-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="progress" id="progress"></div>
+<nav class="dots" id="dots"></nav>
+
+<!-- 1 · COVER -->
+<section class="slide slide--dark cover">
+  <div class="aura"></div>
+  <div class="inner">
+    <h1 class="reveal from-blur">
+      Predicting Eurex bond futures with
+      <span class="circle-word">TLOB
+        <svg class="circle-mark" viewBox="0 0 400 130" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M 364 32 C 286 4, 78 6, 22 34 C -22 60, -4 104, 92 118 C 240 134, 380 118, 392 80 C 402 48, 386 38, 364 32"/>
+        </svg>
+      </span>
+    </h1>
+    <p class="sub reveal">A deep-learning directional signal and a market-making backtest across the euro govvie curve — Citi POC prep, week of 26 Jun – 2 Jul 2026.</p>
+  </div>
+</section>
+
+<!-- 2 · AGENDA -->
+<section class="slide agenda">
+  <div class="eyebrow reveal">What I worked on this week</div>
+  <h2 class="title reveal">Four questions, one model</h2>
+  <div class="agenda-list stagger">
+    <div class="agenda-item active reveal"><div class="agenda-num">1</div>
+      <div><div class="agenda-label">Reframing the label for market making</div>
+      <div class="agenda-desc">Why the spread-gated target is unlearnable at 1s — and the fix.</div></div></div>
+    <div class="agenda-item reveal"><div class="agenda-num">2</div>
+      <div><div class="agenda-label">TLOB vs Tushar's linear model</div>
+      <div class="agenda-desc">Head-to-head across the curve, and where the DNN actually wins.</div></div></div>
+    <div class="agenda-item reveal"><div class="agenda-num">3</div>
+      <div><div class="agenda-label">Does more input help?</div>
+      <div class="agenda-desc">Order-book depth, cross-asset stacking, micro features.</div></div></div>
+    <div class="agenda-item reveal"><div class="agenda-num">4</div>
+      <div><div class="agenda-label">A realistic market-making backtest</div>
+      <div class="agenda-desc">Queue-aware maker with adverse selection — does the signal pay?</div></div></div>
+  </div>
+</section>
+
+<!-- 3 · SETUP -->
+<section class="slide two-col">
+  <div class="eyebrow reveal">Setup</div>
+  <h2 class="title reveal">Data &amp; model</h2>
+  <div class="two-col-grid">
+    <ul class="bullets reveal from-left">
+      <li><b>Six euro govvie futures</b> <span>— Bund, Bobl, Schatz, Buxl (DE), BTP (IT), OAT (FR).</span></li>
+      <li><b>Databento TBBO, top-of-book (L1)</b> <span>— ~252 trading days, 2025-06 → 2026-05.</span></li>
+      <li><b>TLOB</b> <span>— deep transformer over the raw LOB sequence.</span></li>
+      <li><b>3-class target</b> <span>— up / flat / down, chronological 80/5/15 split, out-of-sample argmax.</span></li>
+    </ul>
+    <div class="panel reveal from-right">
+      <h3>Anchor instrument — Bund (FGBL)</h3>
+      <div class="kv"><span class="k">Tenor</span><span class="v">10y German</span></div>
+      <div class="kv"><span class="k">Feed</span><span class="v">TBBO / L1</span></div>
+      <div class="kv"><span class="k">Input width</span><span class="v">8 features</span></div>
+      <div class="kv"><span class="k">OOS test rows (1s)</span><span class="v">~340k</span></div>
+      <div class="kv"><span class="k">Baselines</span><span class="v">random 33% · majority-flat 34%</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · LABEL REFRAMING -->
+<section class="slide two-col">
+  <div class="eyebrow reveal">The key methodological move</div>
+  <h2 class="title reveal">A label a maker can actually learn</h2>
+  <div class="two-col-grid">
+    <ul class="bullets reveal from-left">
+      <li><b>The problem</b> <span>— the standard label gates a move on <i>spread + fee</i>. At 1s almost nothing clears ~2 ticks → ~97% "flat" → degenerate to learn.</span></li>
+      <li><b>The insight</b> <span>— as a <i>maker</i> we never cross the spread, so drop the gate.</span></li>
+      <li><b>New target</b> <span>— sign of the next-second smoothed-mid drift → a balanced ~33/33/33 up/flat/down.</span></li>
+      <li><b>Framework</b> <span>— added <span class="cnum">label_threshold_ticks</span> to tlob, freeing <span class="cnum">fee</span> for the backtest.</span></li>
+    </ul>
+    <div class="panel reveal from-right">
+      <h3>Class balance @ 1s</h3>
+      <div class="kv"><span class="k">Spread+fee gate</span><span class="v">~97% flat &nbsp;✕</span></div>
+      <div class="kv"><span class="k">sign(Δ smoothed-mid)</span><span class="v">29 / 43 / 29 &nbsp;✓</span></div>
+      <div class="kv"><span class="k">Result</span><span class="v">learnable, balanced</span></div>
+      <p class="caption" style="margin-top:1.1rem">The reframing is what makes every result that follows possible.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · TLOB vs LINEAR (1s) -->
+<section class="slide compare">
+  <div class="eyebrow reveal">Result 1 — the DNN case</div>
+  <h2 class="title reveal">TLOB beats the linear model by +12 pts at 1s</h2>
+  <div class="hz-badge time reveal">Horizon: 1s — time-based</div>
+  <table class="rt reveal">
+    <thead><tr><th>Model — Bund, 1s sign target</th><th>Accuracy</th><th>Macro-F1</th><th>flat F1</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>TLOB (deep, raw L1 sequence)</td><td class="num">0.611</td><td class="num">0.609</td><td class="num">0.669</td></tr>
+      <tr><td>Linear — Tushar's full 40-feature L1 set</td><td class="num">0.489</td><td class="num">0.472</td><td class="num">0.316</td></tr>
+      <tr><td>Δ (TLOB − linear)</td><td class="num pos">+0.122</td><td class="num pos">+0.137</td><td class="num pos">+0.353</td></tr>
+    </tbody>
+  </table>
+  <p class="caption reveal">Identical target, split and ~340k OOS rows. The biggest gap is the <b>flat</b> class (+0.35 F1): the linear model barely detects "no-drift" periods (0.316) while TLOB reads them well (0.669). Imbalance alone — ~92% on the mechanical next-tick target — reaches only ~49% here.</p>
+</section>
+
+<!-- 5b · TIME vs TICK HORIZON -->
+<section class="slide compare">
+  <div class="eyebrow reveal">Two ways to define the horizon</div>
+  <h2 class="title reveal">1s time horizon vs 1 / 2 / 5-event tick horizons</h2>
+  <div class="hz-badge tick reveal">Bund · TLOB · 3-class pure-sign · TBBO L1</div>
+  <table class="rt reveal">
+    <thead><tr><th>Horizon</th><th>Acc</th><th>Macro-F1</th><th>up F1</th><th>flat F1</th><th>down F1</th><th>flat %</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td><b>1 second</b> — time-based</td><td class="num">0.611</td><td class="num">0.609</td><td class="num">0.596</td><td class="num">0.669</td><td class="num">0.561</td><td class="num">43%</td></tr>
+      <tr><td>1 event — tick-based</td><td class="num">0.861</td><td class="num">0.785</td><td class="num">0.724</td><td class="num">0.908</td><td class="num">0.723</td><td class="num">~82%</td></tr>
+      <tr><td>2 events — tick-based</td><td class="num">0.743</td><td class="num">0.708</td><td class="num">0.666</td><td class="num">0.802</td><td class="num">0.656</td><td class="num">—</td></tr>
+      <tr><td>5 events — tick-based</td><td class="num">0.681</td><td class="num">0.681</td><td class="num">0.685</td><td class="num">0.681</td><td class="num">0.678</td><td class="num">40%</td></tr>
+    </tbody>
+  </table>
+  <p class="caption reveal"><b>Tick horizons post a higher headline — but read the flat column.</b> At 1 event the target is ~82% "flat", so accuracy 0.861 / flat-F1 0.908 are inflated by the easy class; the honest read is the up/down F1 (~0.72). As the event horizon lengthens (1→5) the flat share falls toward balance (~82% → 40%) and the up/down F1 stays strong. <b>The 5-event target is the most balanced tick target and is genuinely more predictable than 1s (0.68 vs 0.61 macro-F1)</b> — a 5-event smoothed drift persists more than a 1-second one.</p>
+</section>
+
+<!-- 6 · CROSS-INSTRUMENT -->
+<section class="slide compare">
+  <div class="eyebrow reveal">Result 2 — across the curve</div>
+  <h2 class="title reveal">The same liquidity gradient, top to bottom</h2>
+  <div class="hz-badge time reveal">Horizon: 1s — time-based</div>
+  <table class="rt reveal">
+    <thead><tr><th>Instrument</th><th>Tenor</th><th>Accuracy</th><th>Macro-F1</th><th>up F1</th><th>down F1</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>Bund (FGBL)</td><td>10y DE</td><td class="num">0.611</td><td class="num">0.609</td><td class="num">0.596</td><td class="num">0.561</td></tr>
+      <tr><td>Bobl (FGBM)</td><td>5y DE</td><td class="num">0.580</td><td class="num">0.576</td><td class="num">0.566</td><td class="num">0.529</td></tr>
+      <tr><td>BTP (FBTP)</td><td>10y IT</td><td class="num">0.571</td><td class="num">0.521</td><td class="num">0.602</td><td class="num">0.631</td></tr>
+      <tr><td>Buxl (FGBX)</td><td>30y DE</td><td class="num">0.561</td><td class="num">0.546</td><td class="num">0.586</td><td class="num">0.616</td></tr>
+      <tr><td>OAT (FOAT)</td><td>10y FR</td><td class="num">0.558</td><td class="num">0.541</td><td class="num">0.592</td><td class="num">0.594</td></tr>
+      <tr><td>Schatz (FGBS)</td><td>2y DE</td><td class="num">0.543</td><td class="num">0.542</td><td class="num">0.513</td><td class="num">0.536</td></tr>
+    </tbody>
+  </table>
+  <p class="caption reveal">German core on top, Schatz weakest — the same ordering as Tushar's report. BTP / Buxl / OAT have low flat-F1 but the sharpest <i>directional</i> F1: their mid rarely sits still at 1s, so accuracy is dragged down by a thin flat class.</p>
+</section>
+
+<!-- 7 · DEPTH -->
+<section class="slide stats">
+  <div class="eyebrow reveal">Result 3 — does depth help?</div>
+  <h2 class="title reveal">Order-book depth <i>hurts</i>. Top-of-book is enough.</h2>
+  <div class="hz-badge time reveal">Horizon: 1s — time-based · matched 21-day window</div>
+  <div class="stat-grid two">
+    <div class="stat reveal from-scale">
+      <div class="num accent">0.557</div>
+      <div class="slabel">TBBO — L1, 8 features</div>
+      <div class="sctx">Top-of-book only, matched 21-day window.</div>
+    </div>
+    <div class="stat reveal from-scale">
+      <div class="num">0.497</div>
+      <div class="slabel">MBP-10 — L10, 44 features</div>
+      <div class="sctx">Full depth: −6.0 pts, and it overfits fast.</div>
+    </div>
+  </div>
+  <p class="caption reveal">More inputs on far less data is less data-efficient, and depth carries little marginal signal at 1s. The same story repeats at the next-tick horizon (0.747 with L10 vs 0.793 with L1). <b>Use TBBO / L1</b> — also the only feed available across all six instruments and the full year.</p>
+</section>
+
+<!-- 8 · NEXT-TICK -->
+<section class="slide compare">
+  <div class="eyebrow reveal">Result 4 — the opposite regime</div>
+  <h2 class="title reveal">At the next tick, TLOB only ties the linear</h2>
+  <div class="hz-badge tick reveal">Horizon: next tick — event-based, binary</div>
+  <table class="rt reveal">
+    <thead><tr><th>Model — Bund, next-tick sign (binary)</th><th>Features</th><th>Sign accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>Linear — imbalance only</td><td>1</td><td class="num">0.7924</td></tr>
+      <tr><td>Linear — Tushar's full L1 set</td><td>40</td><td class="num">0.7926</td></tr>
+      <tr class="hi"><td>TLOB (deep)</td><td>raw L1 seq</td><td class="num">0.7932</td></tr>
+      <tr><td>TLOB — MBP-10 full depth</td><td>44</td><td class="num">0.7472</td></tr>
+    </tbody>
+  </table>
+  <p class="caption reveal">Replicated Tushar's exact next-tick label inside our framework. It is <b>near-mechanical</b>: top-of-book imbalance alone hits ~79.2%, the other 39 features add +0.02 pt, and TLOB matches — <b>no deep-model edge here</b>. A sequence model has nothing to add once the static imbalance signal fully determines the answer.</p>
+</section>
+
+<!-- 9 · HORIZON STORY -->
+<section class="slide">
+  <div class="eyebrow reveal">The insight, in one line</div>
+  <h2 class="title reveal">TLOB's edge over linear grows with the horizon</h2>
+  <div class="hbars">
+    <div class="hbar-row reveal">
+      <div class="hbar-label">Next tick<small>mechanical · imbalance solves it</small></div>
+      <div class="hbar-track"><div class="hbar-fill dim" style="width:1.2%"></div><span class="hbar-val" style="position:absolute;left:2%;top:50%;transform:translateY(-50%)">+0.1 pt — a tie</span></div>
+    </div>
+    <div class="hbar-row reveal">
+      <div class="hbar-label">1s smoothed<small>signal has decayed · sequence matters</small></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:88%"><span class="hbar-val inbar">+12.2 pts</span></div></div>
+    </div>
+  </div>
+  <p class="caption reveal" style="margin-top:2rem">A sequence model earns its keep <b>only once the mechanical top-of-book imbalance signal decays.</b> At the next tick the answer is already in the current book; at 1s, the past trajectory carries the information the linear model can't see.</p>
+</section>
+
+<!-- 10 · MICRO FEATURES -->
+<section class="slide stats">
+  <div class="eyebrow reveal">Result 5 — feature engineering</div>
+  <h2 class="title reveal">Micro features give a small, consistent lift</h2>
+  <div class="stat-grid two">
+    <div class="stat reveal from-scale">
+      <div class="num accent">+1.0<span class="unit"> pt</span></div>
+      <div class="slabel">1s sign target</div>
+      <div class="sctx">0.611 → 0.621 accuracy on Bund.</div>
+    </div>
+    <div class="stat reveal from-scale">
+      <div class="num">+0.75<span class="unit"> pt</span></div>
+      <div class="slabel">5-tick sign target</div>
+      <div class="sctx">0.681 → 0.689 accuracy on Bund.</div>
+    </div>
+  </div>
+  <p class="caption reveal">Ported the linear baseline's signals — notional-imbalance ratio, VWAP difference, EWMA signed-flow / OFI, micro-price premium — into the DNN input (<span class="cnum">add_micro_extra</span>, 22 features total). A ~+0.7–1.0 pt lift on both targets, matching the order of magnitude we expected.</p>
+</section>
+
+<!-- 11 · MM BACKTEST METHOD -->
+<section class="slide features">
+  <div class="eyebrow reveal">Result 6a — the backtest</div>
+  <h2 class="title reveal">A queue-aware market-making simulation</h2>
+  <div class="feat-grid stagger">
+    <div class="card reveal">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/></svg></div>
+      <h3>Earn the spread</h3><p>Post one clip at best bid &amp; ask. Maker fills pay <b>no fee</b>; only the close-out crosses (€0.40/side).</p></div>
+    <div class="card reveal">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="1.8"><path d="M3 18h4V8H3zM10 18h4V4h-4zM17 18h4v-7h-4z"/></svg></div>
+      <h3>Trade-flow L1 queue</h3><p>Join the back of the queue; real aggressor volume from the tape consumes it before our clip fills.</p></div>
+    <div class="card reveal">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><path d="M12 3v6l4 2"/><circle cx="12" cy="13" r="8"/></svg></div>
+      <h3>Adverse selection</h3><p>If the market trades through our stale quote we're filled underwater — the core cost being measured.</p></div>
+    <div class="card reveal">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="1.8"><path d="M12 3l7 4v5c0 4-3 7-7 9-4-2-7-5-7-9V7z"/></svg></div>
+      <h3>Pull the toxic side</h3><p>Predict up → pull the ask, keep the bid; mirror for down; quote both when flat.</p></div>
+    <div class="card reveal">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" stroke-width="1.8"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></div>
+      <h3>Risk controls</h3><p>Hard inventory cap ±50 lots, flatten at the 17:00 Berlin close.</p></div>
+    <div class="card reveal">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+      <h3>Baseline control</h3><p>Same maker, signal <b>off</b> — quotes both sides always. Signal minus baseline = what the prediction adds.</p></div>
+  </div>
+</section>
+
+<!-- 12 · MM BACKTEST RESULTS -->
+<section class="slide compare">
+  <div class="eyebrow reveal">Result 6b — does the signal pay?</div>
+  <h2 class="title reveal">The 1-tick TLOB maker is ~breakeven</h2>
+  <table class="rt reveal">
+    <thead><tr><th>Bund maker</th><th>Net P&amp;L</th><th>Sharpe</th><th>Fills</th><th>Per-fill</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>TLOB — 1-tick, flat-aware</td><td class="num">−14.8k</td><td class="num">−0.80</td><td class="num">~55k</td><td class="num">−0.27</td></tr>
+      <tr><td>No-signal two-sided baseline</td><td class="num">−124.6k</td><td class="num">−5.6</td><td class="num">~82k</td><td class="num">—</td></tr>
+      <tr><td>Linear (2-class, no flat) as a maker</td><td class="num">similar</td><td class="num">−4.32</td><td class="num">1,147</td><td class="num">−11.29</td></tr>
+    </tbody>
+  </table>
+  <p class="caption reveal">With the fee fix + realistic queue, the signal cuts adverse selection and lifts P&amp;L <b>+29–88%</b> over a blind maker. <b>A flat class is essential:</b> the 2-class next-tick signal has no "no-move" state, so the maker is forced one-sided, flips constantly, and <b>barely trades (1,147 fills) — non-viable despite 79% directional accuracy.</b> Still marginally negative; closing the gap needs queue priority / confidence-weighted skew.</p>
+</section>
+
+<!-- 13 · TAKEAWAYS -->
+<section class="slide features">
+  <div class="eyebrow reveal">Recap</div>
+  <h2 class="title reveal">Six takeaways</h2>
+  <div class="feat-grid stagger">
+    <div class="card reveal"><h3>1 · The reframing works</h3><p>Dropping the spread+fee gate makes the 1s direction target learnable (vs 97%-flat).</p></div>
+    <div class="card reveal"><h3>2 · TLOB &gt; linear at 1s</h3><p><span class="cnum">+12 pts</span> accuracy on the identical target — the clear DNN case.</p></div>
+    <div class="card reveal"><h3>3 · Edge grows with horizon</h3><p>A statistical tie at the mechanical next-tick; the DNN wins once the imbalance signal decays.</p></div>
+    <div class="card reveal"><h3>4 · L1 is enough</h3><p>MBP-10 depth hurts and overfits at both horizons. Top-of-book carries the signal.</p></div>
+    <div class="card reveal"><h3>5 · Micro features add ~1 pt</h3><p>Small but consistent lift on 1s and 5-tick targets.</p></div>
+    <div class="card reveal"><h3>6 · Maker ~breakeven</h3><p>Signal cuts adverse selection; the flat class is what makes a viable maker.</p></div>
+  </div>
+</section>
+
+<!-- 14 · CLOSING -->
+<section class="slide slide--dark closing">
+  <div class="aura"></div>
+  <div class="inner" style="position:relative;z-index:1;max-width:min(92vw,1400px)">
+    <h1 class="reveal from-blur">Next: close the
+      <span class="circle-word">breakeven gap
+        <svg class="circle-mark" viewBox="0 0 400 130" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M 364 32 C 286 4, 78 6, 22 34 C -22 60, -4 104, 92 118 C 240 134, 380 118, 392 80 C 402 48, 386 38, 364 32"/>
+        </svg>
+      </span>
+    </h1>
+    <p class="next reveal">A proper maker model — <b>queue priority + confidence-weighted quote skew</b> — where earning the spread should turn the economics positive. <br><br>Lead-lag &amp; cross-asset detection covered in a separate deck.</p>
+  </div>
+</section>
+
+<script>
+// Signal JS is running: this re-enables the hidden->reveal animation.
+// If this script never runs (some preview webviews), content stays visible.
+document.documentElement.classList.add('js');
+// progress + dots + nav
+const slides=[...document.querySelectorAll('.slide')];
+const dots=document.getElementById('dots');
+slides.forEach((s,i)=>{const b=document.createElement('button');b.setAttribute('aria-label','Slide '+(i+1));
+  b.onclick=()=>s.scrollIntoView({behavior:'smooth'});dots.appendChild(b);});
+const dotEls=[...dots.children];
+const progress=document.getElementById('progress');
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
+  e.target.classList.add('visible');
+  const i=slides.indexOf(e.target);
+  dotEls.forEach((d,j)=>d.classList.toggle('active',j===i));
+  progress.style.width=((i+1)/slides.length*100)+'%';
+}});},{threshold:0.4});
+slides.forEach(s=>io.observe(s));
+// Fallback for webviews where IntersectionObserver may not fire: reveal
+// any slide currently in view on load/scroll, and a hard safety net after 1s.
+function revealInView(){
+  const h=window.innerHeight||document.documentElement.clientHeight;
+  slides.forEach(s=>{const r=s.getBoundingClientRect();
+    if(r.top<h*0.6&&r.bottom>h*0.4)s.classList.add('visible');});
+}
+window.addEventListener('scroll',revealInView,{passive:true});
+window.addEventListener('load',revealInView);
+revealInView();
+setTimeout(()=>{if(!document.querySelector('.slide.visible'))slides.forEach(s=>s.classList.add('visible'));},1000);
+// keyboard nav
+let cur=0;
+function go(d){cur=Math.max(0,Math.min(slides.length-1,cur+d));slides[cur].scrollIntoView({behavior:'smooth'});}
+window.addEventListener('keydown',e=>{
+  const i=slides.findIndex(s=>s.classList.contains('visible'));if(i>=0)cur=i;
+  if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();go(1);}
+  if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(-1);}
+});
+// count-up
+const cio=new IntersectionObserver((es)=>{es.forEach(e=>{if(!e.isIntersecting)return;
+  const el=e.target,target=parseFloat(el.dataset.count),start=performance.now();
+  const step=t=>{const p=Math.min(1,(t-start)/900),eased=1-Math.pow(1-p,3);
+    el.textContent=(target*eased).toFixed(target%1===0?0:(target*10%10===0?1:2));
+    if(p<1)requestAnimationFrame(step);};
+  requestAnimationFrame(step);cio.unobserve(el);});},{threshold:0.4});
+document.querySelectorAll('[data-count]').forEach(c=>cio.observe(c));
+</script>
